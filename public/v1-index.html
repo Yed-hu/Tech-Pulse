@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech Pulse — Yedhu's Daily Brief</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  /* ── CSS VARIABLES ──────────────────────────────────────────
+     Variables let you define colours once and reuse everywhere.
+     Change --accent here and it updates across the whole page. */
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --ai: #00e5ff;
+    --data: #a78bfa;
+    --cloud: #34d399;
+    --startups: #f59e0b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; }
+
+  /* Ambient glow orbs in background */
+  .glow-orb { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.07; pointer-events: none; z-index: 0; }
+  .glow-orb.one { width: 600px; height: 600px; background: var(--accent2); top: -200px; right: -100px; }
+  .glow-orb.two { width: 400px; height: 400px; background: var(--accent); bottom: -100px; left: -100px; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; position: relative; z-index: 1; }
+
+  /* ── HEADER ── */
+  header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 40px; flex-wrap: wrap; gap: 16px; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; opacity: 0.8; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(28px, 5vw, 44px); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; }
+  h1 span { color: transparent; -webkit-text-stroke: 1px var(--accent); }
+  .date-block { text-align: right; font-size: 11px; color: var(--muted); }
+  .date-block .time { font-size: 22px; font-family: 'Syne', sans-serif; font-weight: 700; color: var(--text); display: block; margin-top: 4px; }
+
+  /* ── SERVER BAR ──
+     Lets you switch backend URL between localhost (local dev)
+     and your Render.com URL (deployed version) */
+  .server-bar { background: var(--surface); border: 1px solid var(--border); padding: 12px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .server-bar label { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+  .server-input { flex: 1; min-width: 200px; background: #0a0a0f; border: 1px solid var(--border); color: var(--text); font-family: 'DM Mono', monospace; font-size: 11px; padding: 7px 12px; outline: none; transition: border-color 0.2s; }
+  .server-input:focus { border-color: var(--accent); }
+  .server-btn { padding: 7px 16px; background: transparent; border: 1px solid var(--accent); color: var(--accent); font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+  .server-btn:hover { background: var(--accent); color: var(--bg); }
+  .server-status { font-size: 10px; }
+  .server-status.ok  { color: var(--cloud); }
+  .server-status.err { color: #f87171; }
+  .server-status.checking { color: var(--startups); }
+
+  /* ── TOPIC TABS ── */
+  .tabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+  .tab { padding: 7px 16px; border-radius: 2px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+  .tab::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: currentColor; transform: scaleX(0); transition: transform 0.2s; }
+  .tab.active::before, .tab:hover::before { transform: scaleX(1); }
+  .tab.active, .tab:hover { color: var(--text); border-color: currentColor; }
+  .tab[data-cat="all"]      { color: var(--accent); }
+  .tab[data-cat="ai"]       { color: var(--ai); }
+  .tab[data-cat="data"]     { color: var(--data); }
+  .tab[data-cat="cloud"]    { color: var(--cloud); }
+  .tab[data-cat="startups"] { color: var(--startups); }
+
+  /* ── FETCH BUTTON ── */
+  .fetch-btn { width: 100%; padding: 18px; background: transparent; border: 1px solid var(--accent); color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-bottom: 28px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .fetch-btn::before { content: ''; position: absolute; inset: 0; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 0.3s; z-index: 0; }
+  .fetch-btn:hover::before { transform: scaleX(1); }
+  .fetch-btn:hover { color: var(--bg); }
+  .fetch-btn > * { position: relative; z-index: 1; }
+  .fetch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .fetch-btn:disabled::before { transform: scaleX(0) !important; }
+
+  /* ── LOADING ANIMATION ── */
+  .loading { display: none; flex-direction: column; align-items: center; gap: 16px; padding: 60px 0; color: var(--muted); font-size: 12px; letter-spacing: 0.15em; }
+  .loading.show { display: flex; }
+  .loader-bar { width: 200px; height: 2px; background: var(--border); position: relative; overflow: hidden; }
+  .loader-bar::after { content: ''; position: absolute; inset: 0; background: var(--accent); animation: scan 1.2s ease-in-out infinite; }
+  @keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+  /* ── AI DIGEST BOX ── */
+  .summary-box { background: linear-gradient(135deg, #0d1117, #111827); border: 1px solid var(--accent2); padding: 28px; margin-bottom: 2px; position: relative; display: none; animation: fadeUp 0.5s ease; }
+  .summary-box.show { display: block; }
+  .summary-box::before { content: 'AI DIGEST'; position: absolute; top: -1px; left: 24px; background: var(--accent2); color: #fff; font-size: 9px; letter-spacing: 0.2em; padding: 3px 10px; }
+  .summary-box h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--data); margin-top: 8px; }
+  .summary-box p { font-size: 12px; line-height: 1.8; color: #94a3b8; }
+  .meta-tag { font-size: 9px; color: var(--muted); margin-top: 10px; letter-spacing: 0.1em; }
+
+  /* ── NEWS ARTICLES ── */
+  .news-grid { display: flex; flex-direction: column; gap: 2px; }
+  .article { background: var(--surface); border: 1px solid var(--border); padding: 24px; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden; animation: fadeUp 0.4s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Coloured left border — uses CSS variable set per article */
+  .article::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--cat-color, var(--accent)); transform: scaleY(0); transition: transform 0.25s; transform-origin: bottom; }
+  .article:hover::before { transform: scaleY(1); }
+  .article:hover { background: #16161f; border-color: #2a2a3e; }
+
+  .article-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .cat-badge { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; padding: 3px 8px; border: 1px solid currentColor; border-radius: 2px; color: var(--cat-color, var(--accent)); opacity: 0.8; }
+  .article-source { font-size: 10px; color: var(--muted); margin-left: auto; }
+  .article-points { font-size: 10px; color: var(--startups); margin-left: 8px; }
+
+  .article-title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; line-height: 1.3; letter-spacing: -0.02em; margin-bottom: 10px; }
+  .article-summary { font-size: 12px; line-height: 1.7; color: #94a3b8; display: none; margin-bottom: 14px; }
+  .article.expanded .article-summary { display: block; }
+
+  .article-footer { display: flex; align-items: center; justify-content: space-between; }
+  .read-link { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cat-color, var(--accent)); text-decoration: none; display: none; align-items: center; gap: 6px; }
+  .article.expanded .read-link { display: flex; }
+  .expand-hint { font-size: 10px; color: var(--muted); }
+  .article.expanded .expand-hint { opacity: 0; }
+
+  /* ── ERROR MESSAGE ── */
+  .error-msg { background: #1a0a0a; border: 1px solid #7f1d1d; color: #fca5a5; padding: 16px 20px; font-size: 12px; margin-bottom: 24px; display: none; line-height: 1.7; }
+  .error-msg.show { display: block; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state { text-align: center; padding: 80px 40px; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+  .empty-state p { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ── FOOTER ── */
+  footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); flex-wrap: wrap; gap: 8px; }
+  .pulse { display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 6px; animation: pulse 2s ease infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } }
+</style>
+</head>
+<body>
+
+<div class="glow-orb one"></div>
+<div class="glow-orb two"></div>
+
+<div class="container">
+
+  <!-- HEADER: Title + live clock -->
+  <header>
+    <div>
+      <div class="eyebrow">// morning briefing</div>
+      <h1>Tech<br><span>Pulse</span></h1>
+    </div>
+    <div>
+      <div class="date-block">
+        <span id="dateStr">—</span>
+        <span class="time" id="timeStr">—</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- SERVER BAR: Type your backend URL here and ping it -->
+  <div class="server-bar">
+    <label>Backend URL:</label>
+    <input class="server-input" id="serverUrl" value="http://localhost:8000" />
+    <button class="server-btn" onclick="pingServer()">Ping</button>
+    <span class="server-status" id="serverStatus">— not checked yet</span>
+  </div>
+
+  <!-- TOPIC TABS: Filter by category -->
+  <div class="tabs">
+    <button class="tab active" data-cat="all">All Topics</button>
+    <button class="tab" data-cat="ai">AI & ML</button>
+    <button class="tab" data-cat="data">Data & Analytics</button>
+    <button class="tab" data-cat="cloud">Cloud & DevOps</button>
+    <button class="tab" data-cat="startups">Startups</button>
+  </div>
+
+  <!-- MAIN BUTTON -->
+  <button class="fetch-btn" id="fetchBtn" onclick="fetchBriefing()">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+    </svg>
+    <span>Fetch Today's Briefing</span>
+  </button>
+
+  <!-- ERROR BOX: shows if something goes wrong -->
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- LOADING ANIMATION -->
+  <div class="loading" id="loading">
+    <div class="loader-bar"></div>
+    <span id="loadingText">FETCHING HACKER NEWS...</span>
+  </div>
+
+  <!-- AI DIGEST: big picture summary -->
+  <div class="summary-box" id="summaryBox"></div>
+
+  <!-- ARTICLES GRID -->
+  <div class="news-grid" id="newsGrid">
+    <div class="empty-state">
+      <div class="icon">◈</div>
+      <p>Ping your server then fetch today's briefing</p>
+    </div>
+  </div>
+
+  <footer>
+    <div><span class="pulse"></span>Yedhu's Tech Pulse — Hacker News + GPT-4o</div>
+    <div id="footerCount"></div>
+  </footer>
+
+</div>
+
+<script>
+// ================================================================
+// JAVASCRIPT — How the frontend works
+// ================================================================
+// This file runs in the BROWSER (not on the server).
+// It does 3 things:
+//   1. Shows a live clock
+//   2. Pings your Python server to check it's alive
+//   3. Fetches the briefing from your Python server
+//      and renders the articles in the UI
+// ================================================================
+
+
+// ── SECTION A: LIVE CLOCK ────────────────────────────────────────
+// Updates the date and time display every second
+
+function updateClock() {
+  const now = new Date();
+  // new Date() = current date and time
+
+  document.getElementById('timeStr').textContent =
+    now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  // toLocaleTimeString formats time based on locale
+  // 'en-GB' = UK format → 24hr clock: "08:30"
+
+  document.getElementById('dateStr').textContent =
+    now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  // → "Thursday, 5 March 2026"
+}
+
+updateClock();             // Run once immediately on page load
+setInterval(updateClock, 1000); // Then repeat every 1000ms (1 second)
+
+
+// ── SECTION B: STATE VARIABLES ──────────────────────────────────
+// These variables hold the app's current state
+// let = can be changed later (unlike const)
+
+let allArticles = [];    // All articles from the last fetch
+let currentCat  = 'all'; // Currently selected tab
+
+// Colour map: category → CSS colour variable
+const catColors = {
+  ai:       '#00e5ff',
+  data:     '#a78bfa',
+  cloud:    '#34d399',
+  startups: '#f59e0b'
+};
+
+// Label map: category → display text
+const catLabels = {
+  ai:       'AI & ML',
+  data:     'Data & Analytics',
+  cloud:    'Cloud & DevOps',
+  startups: 'Startups'
+};
+
+// Helper: get the backend URL from the input box, cleaned up
+function getServerUrl() {
+  return document.getElementById('serverUrl').value.trim().replace(/\/$/, '');
+  // .trim() = remove leading/trailing whitespace
+  // .replace(/\/$/, '') = remove trailing slash if present
+  // e.g. "http://localhost:8000/" → "http://localhost:8000"
+}
+
+
+// ── SECTION C: PING SERVER ──────────────────────────────────────
+// Tests if your Python backend is reachable before fetching
+// Calls the GET /health endpoint in main.py
+
+async function pingServer() {
+  const statusEl = document.getElementById('serverStatus');
+  statusEl.textContent = '⟳ checking...';
+  statusEl.className = 'server-status checking';
+
+  try {
+    const res = await fetch(`${getServerUrl()}/health`);
+    // fetch() makes an HTTP GET request to /health
+    // await = wait for the response before continuing
+    // Template literal: `${getServerUrl()}/health`
+    // → "http://localhost:8000/health"
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // res.ok = true if status is 200-299
+    // throw = immediately jumps to the catch block
+
+    const data = await res.json();
+    // res.json() parses the JSON response body
+    // data = { status: "ok", token_configured: true, timestamp: "..." }
+
+    if (data.token_configured) {
+      statusEl.textContent = '✓ Server online — token configured';
+      statusEl.className = 'server-status ok';
+    } else {
+      statusEl.textContent = '⚠ Server online but GITHUB_TOKEN missing in .env!';
+      statusEl.className = 'server-status err';
+    }
+
+  } catch (err) {
+    statusEl.textContent = `✗ Cannot reach server: ${err.message}`;
+    statusEl.className = 'server-status err';
+  }
+}
+
+
+// ── SECTION D: TAB FILTERING ────────────────────────────────────
+// When you click a tab, it filters the already-fetched articles
+// No need to re-fetch from server — just re-render from allArticles
+
+document.querySelectorAll('.tab').forEach(tab => {
+  // querySelectorAll('.tab') = finds all elements with class "tab"
+  // .forEach() = loop through each one
+
+  tab.addEventListener('click', () => {
+    // addEventListener = run this function when tab is clicked
+
+    // Remove 'active' class from all tabs
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+    // Add 'active' to the clicked tab
+    tab.classList.add('active');
+
+    // Update state variable
+    currentCat = tab.dataset.cat;
+    // dataset.cat reads the HTML attribute: data-cat="ai"
+
+    // Re-render with the new filter
+    renderArticles();
+  });
+});
+
+
+// ── SECTION E: RENDER ARTICLES ──────────────────────────────────
+// Takes allArticles, filters by currentCat, builds HTML
+
+function renderArticles() {
+  const grid = document.getElementById('newsGrid');
+
+  // Filter: if "all" selected show everything, otherwise filter by category
+  const list = currentCat === 'all'
+    ? allArticles
+    : allArticles.filter(a => a.category === currentCat);
+  // Array.filter() returns a NEW array with only matching items
+  // Arrow function: a => a.category === currentCat
+  // Same as: function(a) { return a.category === currentCat; }
+
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">◈</div><p>No articles in this category today</p></div>';
+    return; // exit function early
+  }
+
+  // .map() transforms each article object → HTML string
+  // .join('') combines the array of strings into one big HTML string
+  grid.innerHTML = list.map((article, index) => `
+    <div class="article"
+         style="--cat-color: ${catColors[article.category]}; animation-delay: ${index * 0.06}s"
+         onclick="this.classList.toggle('expanded')">
+
+      <div class="article-top">
+        <span class="cat-badge">${catLabels[article.category]}</span>
+        <span class="article-source">${article.source || 'Hacker News'}</span>
+      </div>
+
+      <div class="article-title">${article.title}</div>
+
+      <!-- Summary only visible when article has class 'expanded' -->
+      <div class="article-summary">${article.summary}</div>
+
+      <div class="article-footer">
+        <a class="read-link"
+           href="${article.url || '#'}"
+           target="_blank"
+           onclick="event.stopPropagation()">
+          Read full story →
+        </a>
+        <!-- stopPropagation prevents the click from also toggling expanded -->
+        <span class="expand-hint">click to expand</span>
+      </div>
+
+    </div>
+  `).join('');
+
+  document.getElementById('footerCount').textContent =
+    `${list.length} of ${allArticles.length} stories shown`;
+}
+
+
+// ── SECTION F: MAIN FETCH FUNCTION ──────────────────────────────
+// This is the core of the frontend.
+// Sends a POST request to your Python server → gets news JSON → renders it
+//
+// Data flow:
+//   Browser → POST /api/briefing → FastAPI → HN API + GPT-4o → FastAPI → Browser
+
+async function fetchBriefing() {
+  // Grab UI elements
+  const btn        = document.getElementById('fetchBtn');
+  const loading    = document.getElementById('loading');
+  const summaryBox = document.getElementById('summaryBox');
+  const errorEl    = document.getElementById('errorMsg');
+
+  // Reset UI to loading state
+  btn.disabled = true;
+  loading.classList.add('show');
+  summaryBox.classList.remove('show');
+  errorEl.classList.remove('show');
+  document.getElementById('newsGrid').innerHTML = '';
+
+  const date = document.getElementById('dateStr').textContent;
+  // e.g. "Thursday, 5 March 2026"
+
+  // Cycle through loading messages so the user knows what's happening
+  const msgs = [
+    'FETCHING HACKER NEWS...',
+    'SENDING TO GPT-4O...',
+    'CATEGORISING STORIES...',
+    'COMPILING YOUR BRIEF...'
+  ];
+  let msgIndex = 0;
+  const ticker = setInterval(() => {
+    msgIndex = (msgIndex + 1) % msgs.length;
+    // % = modulo: keeps msgIndex cycling 0→1→2→3→0→1...
+    document.getElementById('loadingText').textContent = msgs[msgIndex];
+  }, 1400);
+
+  try {
+    // ── POST request to YOUR Python backend ──────────────────
+    // This calls the @app.post("/api/briefing") route in main.py
+    const response = await fetch(`${getServerUrl()}/api/briefing`, {
+      method: 'POST',
+      // POST because we're sending data in the request body
+
+      headers: {
+        'Content-Type': 'application/json'
+        // Tells FastAPI: "the body is JSON, please parse it"
+      },
+
+      body: JSON.stringify({
+        topics: currentCat,
+        // Which tab is active: "all", "ai", "data", "cloud", "startups"
+        // Python reads this as: request.topics
+
+        date: date
+        // Today's date string
+        // Python reads this as: request.date
+      })
+      // JSON.stringify() converts JS object → JSON string
+    });
+
+    // ── Check for HTTP errors ─────────────────────────────────
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.detail || `Server returned error ${response.status}`);
+      // errData.detail = the detail message from Python's HTTPException
+    }
+
+    // ── Parse the successful response ────────────────────────
+    const data = await response.json();
+    // data = {
+    //   digest: "...",
+    //   articles: [...],
+    //   fetched_at: "2026-03-05T08:30:00",
+    //   topic_filter: "all",
+    //   model: "gpt-4o via GitHub Models",
+    //   hn_stories_fetched: 25
+    // }
+
+    clearInterval(ticker); // Stop the loading message rotation
+
+    // ── Store articles in state ───────────────────────────────
+    allArticles = data.articles || [];
+    // || [] = use empty array if articles is null/undefined
+
+    // ── Update the digest box ─────────────────────────────────
+    const fetchTime = new Date(data.fetched_at).toLocaleTimeString('en-GB');
+    // new Date("2026-03-05T08:30:00") parses the ISO timestamp
+    // .toLocaleTimeString() → "08:30:00"
+
+    summaryBox.innerHTML = `
+      <h3>Today's Big Picture</h3>
+      <p>${data.digest}</p>
+      <div class="meta-tag">
+        ${data.model} ·
+        ${data.hn_stories_fetched} HN stories fetched ·
+        rendered at ${fetchTime}
+      </div>
+    `;
+    summaryBox.classList.add('show');
+
+    // ── Render the articles ───────────────────────────────────
+    renderArticles();
+
+  } catch (err) {
+    // Something went wrong — show the error message
+    clearInterval(ticker);
+    errorEl.textContent = `Error: ${err.message}`;
+    errorEl.classList.add('show');
+    document.getElementById('newsGrid').innerHTML = `
+      <div class="empty-state">
+        <div class="icon">◈</div>
+        <p>Check server is running · use Ping button above</p>
+      </div>`;
+
+  } finally {
+    // finally ALWAYS runs — whether try succeeded or catch triggered
+    // Use it to reset UI state regardless of outcome
+    loading.classList.remove('show');
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>

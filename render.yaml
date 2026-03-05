@@ -1,0 +1,18 @@
+# render.yaml
+# This file tells Render.com how to deploy your backend.
+# Render reads this automatically when you connect your GitHub repo.
+
+services:
+  - type: web
+    name: tech-pulse-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GITHUB_TOKEN
+        sync: false
+        # sync: false means you enter this manually in Render dashboard
+        # Never put your actual token in this file — it goes on GitHub!
+      - key: FRONTEND_URL
+        sync: false
+        # Set this to: https://yourusername.github.io
