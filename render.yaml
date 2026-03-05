@@ -6,13 +6,11 @@ services:
   - type: web
     name: tech-pulse-api
     runtime: python
+    pythonVersion: "3.11.9"
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: GITHUB_TOKEN
         sync: false
-        # sync: false means you enter this manually in Render dashboard
-        # Never put your actual token in this file — it goes on GitHub!
       - key: FRONTEND_URL
         sync: false
-        # Set this to: https://yourusername.github.io
