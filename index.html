@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech Pulse — Yedhu's Daily Brief</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f; --surface: #111118; --border: #1e1e2e;
+    --accent: #00e5ff; --accent2: #7c3aed;
+    --text: #e2e8f0; --muted: #64748b;
+    --ai: #00e5ff; --data: #a78bfa; --cloud: #34d399; --startups: #f59e0b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; }
+  .glow-orb { position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.07; pointer-events: none; z-index: 0; }
+  .glow-orb.one { width: 600px; height: 600px; background: var(--accent2); top: -200px; right: -100px; }
+  .glow-orb.two { width: 400px; height: 400px; background: var(--accent); bottom: -100px; left: -100px; }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; position: relative; z-index: 1; }
+
+  header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 40px; flex-wrap: wrap; gap: 16px; }
+  .eyebrow { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; opacity: 0.8; }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(28px,5vw,44px); font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; }
+  h1 span { color: transparent; -webkit-text-stroke: 1px var(--accent); }
+  .date-block { text-align: right; font-size: 11px; color: var(--muted); }
+  .date-block .time { font-size: 22px; font-family: 'Syne', sans-serif; font-weight: 700; color: var(--text); display: block; margin-top: 4px; }
+
+  /* Status bar — shows which backend URL is being used */
+  .status-bar { background: var(--surface); border: 1px solid var(--border); padding: 10px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
+  .status-bar .backend-url { color: var(--accent); opacity: 0.7; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); display: inline-block; margin-right: 6px; }
+  .status-dot.online { background: var(--cloud); box-shadow: 0 0 6px var(--cloud); }
+  .status-dot.offline { background: #f87171; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+  .tab { padding: 7px 16px; border-radius: 2px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+  .tab::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: currentColor; transform: scaleX(0); transition: transform 0.2s; }
+  .tab.active::before, .tab:hover::before { transform: scaleX(1); }
+  .tab.active, .tab:hover { color: var(--text); border-color: currentColor; }
+  .tab[data-cat="all"]      { color: var(--accent); }
+  .tab[data-cat="ai"]       { color: var(--ai); }
+  .tab[data-cat="data"]     { color: var(--data); }
+  .tab[data-cat="cloud"]    { color: var(--cloud); }
+  .tab[data-cat="startups"] { color: var(--startups); }
+
+  .fetch-btn { width: 100%; padding: 18px; background: transparent; border: 1px solid var(--accent); color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-bottom: 28px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .fetch-btn::before { content: ''; position: absolute; inset: 0; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 0.3s; z-index: 0; }
+  .fetch-btn:hover::before { transform: scaleX(1); }
+  .fetch-btn:hover { color: var(--bg); }
+  .fetch-btn > * { position: relative; z-index: 1; }
+  .fetch-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .fetch-btn:disabled::before { transform: scaleX(0) !important; }
+
+  .loading { display: none; flex-direction: column; align-items: center; gap: 16px; padding: 60px 0; color: var(--muted); font-size: 12px; letter-spacing: 0.15em; }
+  .loading.show { display: flex; }
+  .loader-bar { width: 200px; height: 2px; background: var(--border); position: relative; overflow: hidden; }
+  .loader-bar::after { content: ''; position: absolute; inset: 0; background: var(--accent); animation: scan 1.2s ease-in-out infinite; }
+  @keyframes scan { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+
+  .summary-box { background: linear-gradient(135deg,#0d1117,#111827); border: 1px solid var(--accent2); padding: 28px; margin-bottom: 2px; position: relative; display: none; animation: fadeUp 0.5s ease; }
+  .summary-box.show { display: block; }
+  .summary-box::before { content: 'AI DIGEST'; position: absolute; top: -1px; left: 24px; background: var(--accent2); color: #fff; font-size: 9px; letter-spacing: 0.2em; padding: 3px 10px; }
+  .summary-box h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--data); margin-top: 8px; }
+  .summary-box p { font-size: 13px; line-height: 1.9; color: #94a3b8; }
+  /* Longer digest needs a bit more line height and size */
+  .meta-tag { font-size: 9px; color: var(--muted); margin-top: 12px; letter-spacing: 0.1em; }
+
+  .news-grid { display: flex; flex-direction: column; gap: 2px; }
+  .article { background: var(--surface); border: 1px solid var(--border); padding: 24px; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden; animation: fadeUp 0.4s ease both; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .article::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--cat-color, var(--accent)); transform: scaleY(0); transition: transform 0.25s; transform-origin: bottom; }
+  .article:hover::before { transform: scaleY(1); }
+  .article:hover { background: #16161f; border-color: #2a2a3e; }
+  .article-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .cat-badge { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; padding: 3px 8px; border: 1px solid currentColor; border-radius: 2px; color: var(--cat-color, var(--accent)); opacity: 0.8; }
+  .article-source { font-size: 10px; color: var(--muted); margin-left: auto; }
+  .article-title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; line-height: 1.3; letter-spacing: -0.02em; margin-bottom: 10px; }
+
+  /* Summary now shows a preview (2 lines) before expanding */
+  .article-summary { font-size: 12px; line-height: 1.8; color: #94a3b8; margin-bottom: 14px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* When expanded, show the full summary */
+  .article.expanded .article-summary { display: block; -webkit-line-clamp: unset; overflow: visible; }
+
+  .article-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .read-link { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cat-color, var(--accent)); text-decoration: none; display: none; align-items: center; gap: 6px; }
+  .article.expanded .read-link { display: flex; }
+  .expand-hint { font-size: 10px; color: var(--muted); }
+  .article.expanded .expand-hint { opacity: 0; }
+
+  .error-msg { background: #1a0a0a; border: 1px solid #7f1d1d; color: #fca5a5; padding: 16px 20px; font-size: 12px; margin-bottom: 24px; display: none; line-height: 1.7; }
+  .error-msg.show { display: block; }
+
+  .empty-state { text-align: center; padding: 80px 40px; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+  .empty-state p { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); flex-wrap: wrap; gap: 8px; }
+  .pulse { display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 6px; animation: pulse 2s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
+</style>
+</head>
+<body>
+
+<div class="glow-orb one"></div>
+<div class="glow-orb two"></div>
+
+<div class="container">
+
+  <header>
+    <div>
+      <div class="eyebrow">// morning briefing</div>
+      <h1>Tech<br><span>Pulse</span></h1>
+    </div>
+    <div>
+      <div class="date-block">
+        <span id="dateStr">—</span>
+        <span class="time" id="timeStr">—</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Status bar: shows backend URL and online/offline dot -->
+  <div class="status-bar">
+    <div>
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">checking server...</span>
+    </div>
+    <span class="backend-url" id="backendUrlDisplay"></span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-cat="all">All Topics</button>
+    <button class="tab" data-cat="ai">AI & ML</button>
+    <button class="tab" data-cat="data">Data & Analytics</button>
+    <button class="tab" data-cat="cloud">Cloud & DevOps</button>
+    <button class="tab" data-cat="startups">Startups</button>
+  </div>
+
+  <button class="fetch-btn" id="fetchBtn" onclick="fetchBriefing()">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+    </svg>
+    <span>Fetch Today's Briefing</span>
+  </button>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="loading" id="loading">
+    <div class="loader-bar"></div>
+    <span id="loadingText">FETCHING HACKER NEWS...</span>
+  </div>
+
+  <div class="summary-box" id="summaryBox"></div>
+
+  <div class="news-grid" id="newsGrid">
+    <div class="empty-state">
+      <div class="icon">◈</div>
+      <p>Click fetch to load today's briefing</p>
+    </div>
+  </div>
+
+  <footer>
+    <div><span class="pulse"></span>Yedhu's Tech Pulse — Hacker News + GPT-4o</div>
+    <div id="footerCount"></div>
+  </footer>
+
+</div>
+
+<script>
+// ================================================================
+// BACKEND URL — Auto-detected, no manual input needed
+// ================================================================
+// How this works:
+//   - In Codespaces: you set BACKEND_URL in the JS config below
+//   - Deployed: index.html is on GitHub Pages, backend is on Render
+//   - We detect which environment we're in automatically
+//
+// The BACKEND_URL variable below is the ONLY thing you change
+// when switching between Codespaces and production.
+// ================================================================
+
+// ── CONFIGURATION ───────────────────────────────────────────────
+// Change this ONE line when deploying to production:
+//   Development (Codespaces): your Codespace URL
+//   Production:               your Render.com URL
+//
+// Leave as empty string "" to auto-detect (uses same origin)
+const BACKEND_URL = "https://tech-pulse-6j8n.onrender.com/";
+// Examples:
+//   const BACKEND_URL = "https://xxxx-8000.app.github.dev";  // Codespaces
+//   const BACKEND_URL = "https://tech-pulse.onrender.com";   // Render
+
+// Auto-detect: if BACKEND_URL is empty, use the current page's origin
+// window.location.origin = "https://yourusername.github.io" (on GitHub Pages)
+//                        = "http://localhost:8000" (local)
+//                        = "https://xxxx.app.github.dev" (Codespaces)
+const API_BASE = BACKEND_URL || window.location.origin;
+// || = "or" — use BACKEND_URL if set, otherwise use current origin
+
+
+// ── CLOCK ────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('timeStr').textContent =
+    now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('dateStr').textContent =
+    now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+
+// ── STATE ────────────────────────────────────────────────────────
+let allArticles = [];
+let currentCat  = 'all';
+
+const catColors = { ai:'#00e5ff', data:'#a78bfa', cloud:'#34d399', startups:'#f59e0b' };
+const catLabels = { ai:'AI & ML', data:'Data & Analytics', cloud:'Cloud & DevOps', startups:'Startups' };
+
+
+// ── AUTO PING ON LOAD ────────────────────────────────────────────
+// When the page loads, automatically check if the backend is alive
+// Updates the status dot (green = online, red = offline)
+
+document.getElementById('backendUrlDisplay').textContent = API_BASE;
+// Show the backend URL in the status bar so you always know which one is active
+
+async function checkServer() {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  try {
+    const res  = await fetch(`${API_BASE}/health`);
+    const data = await res.json();
+    if (res.ok && data.token_configured) {
+      dot.className  = 'status-dot online';
+      text.textContent = 'Server online — ready to fetch';
+    } else if (res.ok && !data.token_configured) {
+      dot.className  = 'status-dot offline';
+      text.textContent = 'Server online but GITHUB_TOKEN missing in .env';
+    } else {
+      throw new Error('bad response');
+    }
+  } catch {
+    dot.className  = 'status-dot offline';
+    text.textContent = 'Server offline — is uvicorn running?';
+  }
+}
+
+// Run the check automatically when page loads — no button needed
+window.addEventListener('load', checkServer);
+
+
+// ── TABS ─────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentCat = tab.dataset.cat;
+    renderArticles();
+  });
+});
+
+
+// ── RENDER ARTICLES ──────────────────────────────────────────────
+function renderArticles() {
+  const grid = document.getElementById('newsGrid');
+  const list = currentCat === 'all'
+    ? allArticles
+    : allArticles.filter(a => a.category === currentCat);
+
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">◈</div><p>No articles in this category today</p></div>';
+    return;
+  }
+
+  grid.innerHTML = list.map((article, i) => `
+    <div class="article"
+         style="--cat-color:${catColors[article.category]};animation-delay:${i*0.06}s"
+         onclick="this.classList.toggle('expanded')">
+      <div class="article-top">
+        <span class="cat-badge">${catLabels[article.category]}</span>
+        <span class="article-source">${article.source || 'Hacker News'}</span>
+      </div>
+      <div class="article-title">${article.title}</div>
+      <div class="article-summary">${article.summary}</div>
+      <div class="article-footer">
+        <a class="read-link"
+           href="${article.url || '#'}"
+           target="_blank"
+           onclick="event.stopPropagation()">Read full story →</a>
+        <span class="expand-hint">click to expand</span>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('footerCount').textContent =
+    `${list.length} of ${allArticles.length} stories shown`;
+}
+
+
+// ── FETCH BRIEFING ───────────────────────────────────────────────
+async function fetchBriefing() {
+  const btn        = document.getElementById('fetchBtn');
+  const loading    = document.getElementById('loading');
+  const summaryBox = document.getElementById('summaryBox');
+  const errorEl    = document.getElementById('errorMsg');
+
+  btn.disabled = true;
+  loading.classList.add('show');
+  summaryBox.classList.remove('show');
+  errorEl.classList.remove('show');
+  document.getElementById('newsGrid').innerHTML = '';
+
+  const date = document.getElementById('dateStr').textContent;
+
+  const msgs = [
+    'FETCHING 30 HACKER NEWS STORIES...',
+    'SENDING TO GPT-4O...',
+    'GENERATING SUMMARIES...',
+    'COMPILING YOUR BRIEF...'
+  ];
+  let mi = 0;
+  const ticker = setInterval(() => {
+    mi = (mi + 1) % msgs.length;
+    document.getElementById('loadingText').textContent = msgs[mi];
+  }, 1400);
+
+  try {
+    const response = await fetch(`${API_BASE}/api/briefing`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ topics: currentCat, date })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || `Server error ${response.status}`);
+    }
+
+    const data = await response.json();
+    clearInterval(ticker);
+
+    allArticles = data.articles || [];
+
+    const fetchTime = new Date(data.fetched_at).toLocaleTimeString('en-GB');
+    summaryBox.innerHTML = `
+      <h3>Today's Big Picture</h3>
+      <p>${data.digest}</p>
+      <div class="meta-tag">
+        ${data.model} ·
+        ${data.hn_stories_fetched} HN stories processed ·
+        fetched at ${fetchTime}
+      </div>`;
+    summaryBox.classList.add('show');
+    renderArticles();
+
+    // Update status dot after successful fetch
+    document.getElementById('statusDot').className = 'status-dot online';
+    document.getElementById('statusText').textContent =
+      `Last fetched at ${fetchTime} — ${allArticles.length} articles`;
+
+  } catch (err) {
+    clearInterval(ticker);
+    errorEl.textContent = `Error: ${err.message}`;
+    errorEl.classList.add('show');
+    document.getElementById('newsGrid').innerHTML =
+      '<div class="empty-state"><div class="icon">◈</div><p>Fetch failed — check status bar above</p></div>';
+    document.getElementById('statusDot').className = 'status-dot offline';
+  } finally {
+    loading.classList.remove('show');
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
