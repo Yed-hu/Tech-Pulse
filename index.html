@@ -230,23 +230,40 @@ document.getElementById('backendUrlDisplay').textContent = API_BASE;
 async function checkServer() {
   const dot  = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
-  try {
-    const res  = await fetch(`${API_BASE}/health`);
-    const data = await res.json();
-    if (res.ok && data.token_configured) {
-      dot.className  = 'status-dot online';
-      text.textContent = 'Server online — ready to fetch';
-    } else if (res.ok && !data.token_configured) {
-      dot.className  = 'status-dot offline';
-      text.textContent = 'Server online but GITHUB_TOKEN missing in .env';
-    } else {
-      throw new Error('bad response');
+
+  dot.className = 'status-dot checking';
+  text.textContent = 'Connecting to server...';
+
+  // Try 3 times with a delay — handles Render cold start (sleep mode)
+  // Render free tier sleeps after 15 mins and takes ~30s to wake up
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res  = await fetch(`${API_BASE}/health`);
+      const data = await res.json();
+
+      if (res.ok && data.token_configured) {
+        dot.className    = 'status-dot online';
+        text.textContent = 'Server online — ready to fetch';
+        return; // success — stop retrying
+      }
+
+    } catch {
+      // Server not ready yet — wait and retry
+      if (attempt < 3) {
+        text.textContent = `Waking up server... attempt ${attempt}/3`;
+        await new Promise(r => setTimeout(r, 15000));
+        // Wait 15 seconds between attempts
+        // setTimeout returns a Promise we can await
+      }
     }
-  } catch {
-    dot.className  = 'status-dot offline';
-    text.textContent = 'Server offline — is uvicorn running?';
   }
+
+  // All 3 attempts failed
+  dot.className    = 'status-dot offline';
+  text.textContent = 'Server is waking up — try fetching in 30 seconds';
+  // Don't say "offline" — it's just sleeping, not broken!
 }
+
 
 // Run the check automatically when page loads — no button needed
 window.addEventListener('load', checkServer);
