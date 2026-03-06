@@ -1,7 +1,7 @@
 ---
 title: Tech Pulse
 emoji: 📰
-colorFrom: cyan
+colorFrom: gray
 colorTo: purple
 sdk: docker
 app_file: main.py
