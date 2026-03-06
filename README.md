@@ -1,11 +1,13 @@
 ---
+
 title: Tech Pulse
 emoji: 📰
 colorFrom: cyan
 colorTo: purple
 sdk: docker
 pinned: false
----
+license: mit
+------------
 
 # Tech Pulse 🚀
 
