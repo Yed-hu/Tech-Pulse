@@ -200,7 +200,7 @@ async def get_briefing(request: BriefingRequest):
 
     # Step 1: Fetch HN stories
     try:
-        hn_stories = await fetch_hn_top_stories(limit=30)
+        hn_stories = await fetch_hn_top_stories(limit=40)
     except Exception as e:
         raise HTTPException(503, detail=f"Failed to fetch Hacker News: {str(e)}")
 
