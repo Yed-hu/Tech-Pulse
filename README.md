@@ -10,8 +10,6 @@ pinned: false
 
 # Tech Pulse
 
-# Tech Pulse
-
 > Daily AI-powered tech briefing — Hacker News + GPT-4o
 
 [![Live App](https://img.shields.io/badge/Live%20App-GitHub%20Pages-00e5ff?style=flat-square&logo=github)](https://yed-hu.github.io/Tech-Pulse/)
@@ -28,8 +26,6 @@ Tech Pulse is a personal daily briefing app that automatically:
 1. Fetches the **top 40 stories** from Hacker News in real time
 2. Sends them to **GPT-4o** for summarisation and categorisation
 3. Presents a clean, **AI-written briefing** tailored for data and tech professionals
-
-Built for **Yedhu Prasad** — Data Analytics professional (Python, SQL, Power BI, ML).
 
 ---
 
