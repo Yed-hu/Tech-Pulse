@@ -33,6 +33,7 @@
   .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); display: inline-block; margin-right: 6px; }
   .status-dot.online { background: var(--cloud); box-shadow: 0 0 6px var(--cloud); }
   .status-dot.offline { background: #f87171; }
+  .status-dot.checking { background: var(--startups); animation: pulse 1s ease infinite; }
 
   .tabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
   .tab { padding: 7px 16px; border-radius: 2px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
@@ -224,7 +225,7 @@ const catLabels = { ai:'AI & ML', data:'Data & Analytics', cloud:'Cloud & DevOps
 // When the page loads, automatically check if the backend is alive
 // Updates the status dot (green = online, red = offline)
 
-document.getElementById('backendUrlDisplay').textContent = API_BASE;
+// document.getElementById('backendUrlDisplay').textContent = API_BASE;
 // Show the backend URL in the status bar so you always know which one is active
 
 async function checkServer() {
@@ -341,10 +342,9 @@ async function fetchBriefing() {
   let mi = 0;
   const ticker = setInterval(() => {
     mi = (mi + 1) % msgs.length;
-      const loadingEl = document.getElementById('loadingText');
-    if (loadingEl) loadingEl.textContent = msgs[mi];
-    // Only update if element exists — prevents TypeError crash
-  }, 1400);
+    const el = document.getElementById('loadingText');
+    if (el) el.textContent = msgs[mi];
+  }, 1400)
 
   try {
     const response = await fetch(`${API_BASE}/api/briefing`, {
