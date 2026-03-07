@@ -1,12 +1,3 @@
-# ================================================================
-# main.py — Tech Pulse Backend v3
-# Changes from v2:
-#   - Fetches 30 HN stories (was 25)
-#   - Longer digest (4-5 sentences)
-#   - Longer per-article summaries (3-4 sentences)
-#   - CORS now accepts your GitHub Pages URL specifically
-# ================================================================
-
 import os
 import json
 from dotenv import load_dotenv
@@ -20,13 +11,7 @@ from datetime import datetime
 
 load_dotenv()
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-
-# ── Your GitHub Pages URL ────────────────────────────────────────
-# Format: https://YOUR-USERNAME.github.io
-# Replace with your actual GitHub username below
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "*")
-# We read this from .env so you never hardcode your URL in code
-# .env:  FRONTEND_URL=https://yourusername.github.io
 # If not set, defaults to "*" (allow all) — fine for development
 
 app = FastAPI(
@@ -43,12 +28,9 @@ app.add_middleware(
     allow_origins=[
         FRONTEND_URL,
         # Your deployed GitHub Pages URL
-        # e.g. https://yourusername.github.io
-
         "http://localhost:8000",
         "http://localhost:3000",
         # Local development URLs
-
         "https://*.app.github.dev",
         # Codespaces URLs (wildcard)
     ],
@@ -58,24 +40,22 @@ app.add_middleware(
 
 app.mount("/public", StaticFiles(directory="public"), name="public")
 
-
 # ── DATA MODELS ──────────────────────────────────────────────────
 class BriefingRequest(BaseModel):
     topics: str = "all"
     date:   str = ""
 
-
 # ── HACKER NEWS FETCHER ──────────────────────────────────────────
-# Fetches 30 real stories from HN front page
+# Fetches 40 real stories from HN front page
 # Sorted by points (upvotes) so GPT gets the best stories first
 
-async def fetch_hn_top_stories(limit: int = 30) -> list:
+async def fetch_hn_top_stories(limit: int = 40) -> list:
     """
     Fetches top stories from Hacker News via Algolia API.
     Free, no API key needed, updates in real time.
     
-    We fetch 30 so GPT has enough to filter by topic.
-    After GPT filters for relevance, you'll get 8-12 articles.
+    We fetch 40 so GPT has enough to filter by topic.
+    After GPT filters for relevance, you'll get 8-15 articles.
     """
     url = f"https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage={limit}"
 
@@ -105,9 +85,8 @@ async def fetch_hn_top_stories(limit: int = 30) -> list:
 
 
 # ── PROMPT BUILDER ───────────────────────────────────────────────
-# Key changes from v2:
-#   - Digest is now 4-5 sentences (was 2-3)
-#   - Each article summary is now 3-4 sentences (was 2-3)
+#   - Digest is now 4-5 sentences 
+#   - Each article summary is now 3-4 sentences 
 
 def build_prompt(topics: str, date: str, hn_stories: list) -> tuple[str, str]:
     """
@@ -126,8 +105,7 @@ def build_prompt(topics: str, date: str, hn_stories: list) -> tuple[str, str]:
     }
     topic_label = topic_map.get(topics, topic_map["all"])
 
-    system_prompt = f"""You are a senior tech news analyst and briefing assistant for Yedhu Prasad,
-a Data Analytics professional in the UK skilled in Python, SQL, Power BI, and Machine Learning.
+    system_prompt = f"""You are a senior tech news analyst and briefing assistant for Tech and Data Analytics professionals.
 
 You will receive a list of real Hacker News front page stories ranked by upvotes.
 Your job: produce a detailed, insightful daily tech briefing from these stories.
@@ -148,7 +126,7 @@ CONTENT QUALITY RULES:
 - summary (per article): Write 3 to 4 sentences minimum.
   Sentence 1: What happened and who is involved.
   Sentence 2: The technical details or context behind it.
-  Sentence 3: Why this matters specifically to a data analyst or ML engineer.
+  Sentence 3: Why this matters specifically to Tech and Data Analytics professionals.
   Sentence 4 (optional): What to watch for next or how to take action.
 
 Return EXACTLY this JSON structure:
@@ -168,7 +146,7 @@ Return EXACTLY this JSON structure:
 Stories to process (sorted by upvotes, most popular first):
 {json.dumps(hn_stories, indent=2)}
 
-Return 8 to 12 of the most relevant articles. JSON only. No other text."""
+Return 8 to 15 of the most relevant articles. JSON only. No other text."""
 
     user_message = f"Generate today's tech briefing for {date or 'today'}. JSON only."
 
@@ -207,7 +185,7 @@ async def health_check():
 async def get_briefing(request: BriefingRequest):
     """
     Main endpoint. Full flow:
-      1. Fetch 30 real stories from Hacker News
+      1. Fetch 40 real stories from Hacker News
       2. Send to GPT-4o with detailed summarisation instructions
       3. Parse, validate, and return clean JSON to frontend
     """
