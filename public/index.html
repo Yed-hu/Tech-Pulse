@@ -341,7 +341,9 @@ async function fetchBriefing() {
   let mi = 0;
   const ticker = setInterval(() => {
     mi = (mi + 1) % msgs.length;
-    document.getElementById('loadingText').textContent = msgs[mi];
+      const loadingEl = document.getElementById('loadingText');
+    if (loadingEl) loadingEl.textContent = msgs[mi];
+    // Only update if element exists — prevents TypeError crash
   }, 1400);
 
   try {
